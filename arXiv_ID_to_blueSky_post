@@ -43,3 +43,9 @@ with open("arxiv_bluesky_mapping.json", "w", encoding="utf-8") as f:
 
 print("JSON mapping saved as 'arxiv_bluesky_mapping.json'")
 
+# If csv file needed
+csv_filename = "arxiv_bluesky_mapping.csv"
+arxiv_df_updated.to_csv(csv_filename, index=False)
+print(f"\n Extracted arXiv mapping saved as '{csv_filename}'")
+
+
