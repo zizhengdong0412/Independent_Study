@@ -1,3 +1,3 @@
 # Independent_Study
 #Given a frozen version of the bluesky db I have, create a db/dictionary on the cluster that maps from arxiv ID -> [bluesky posts about the ID]
-#Below is one approach in Python. The idea is to load frozen Bluesky database, iterate over its posts, extract any arXiv IDs from each post’s text (using a regex that covers common arXiv ID formats), and then build a dictionary mapping each arXiv ID to a list of posts that mention it. Finally, Export this mapping to JSON file.
+#One approach in Python. The idea is to load frozen Bluesky database, iterate over its posts, extract any arXiv IDs from each post’s text (using a regex that covers common arXiv ID formats), and then build a dictionary mapping each arXiv ID to a list of posts that mention it. Finally, Export this mapping to JSON file.
