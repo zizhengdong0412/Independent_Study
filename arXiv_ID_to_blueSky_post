@@ -1,58 +1,41 @@
-import csv
+import pandas as pd
 import re
 import json
 from collections import defaultdict
 
-# Regular expression to match arXiv IDs (like "arXiv:2104.12345")
-arxiv_regex = re.compile(r'arxiv[:\s]*([0-9]{4}\.[0-9]{4,5}(?:v\d+)?)', re.IGNORECASE)
+file_path = "paper_posts_initial.csv"  
+df = pd.read_csv(file_path)
 
-def create_arxiv_mapping(csv_filename):
-    """
-    Reads the CSV file and creates a dictionary mapping arXiv IDs to posts mentioning them.
-    """
-    arxiv_mapping = defaultdict(list)
+# Updated regex pattern to capture different arXiv ID formats, including URLs
+arxiv_regex_updated = re.compile(
+    r'(?:arxiv[:\s]*|https?://(?:www\.)?arxiv\.org/(?:abs|pdf)/)(\d{4}\.\d{4,5}(?:v\d+)?)',
+    re.IGNORECASE
+)
 
-    with open(csv_filename, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        
-        for row in reader:
-            # Extract the SearchText field
-            search_text = row.get("SearchText", "")
-            
-            # Find all arXiv IDs in the text
-            arxiv_ids = arxiv_regex.findall(search_text)
-            
-            for arxiv_id in arxiv_ids:
-                # Store relevant post information
-                post_info = {
-                    "at_uri": row["at_uri"],
-                    "AuthorDID": row["AuthorDID"],
-                    "CID": row["CID"],
-                    "CreatedDate": row["CreatedDate"],
-                    "ReplyParent": row["ReplyParent"],
-                    "ReplyRoot": row["ReplyRoot"],
-                    "SearchText": search_text
-                }
-                arxiv_mapping[arxiv_id].append(post_info)
+# Dictionary to map arXiv ID -> [Bluesky posts]
+arxiv_mapping_updated = defaultdict(list)
 
-    return arxiv_mapping
+# Iterate over rows and extract arXiv IDs using the updated regex
+for _, row in df.iterrows():
+    search_text = str(row.get('SearchText', ''))  # Ensure it's a string
+    arxiv_ids = arxiv_regex_updated.findall(search_text)  # Extract arXiv IDs
 
-if __name__ == "__main__":
-    csv_filename = "paper_posts_initial.csv"
-    
-    # Step 1: Create the arXiv to posts mapping
-    arxiv_dict = create_arxiv_mapping(csv_filename)
-    
-    # Step 2: Persist the mapping (Save as JSON file)
-    output_filename = "arxiv_posts_mapping.json"
-    with open(output_filename, "w", encoding="utf-8") as f:
-        json.dump(arxiv_dict, f, indent=4)
+    for arxiv_id in arxiv_ids:
+        # Store relevant post details
+        arxiv_mapping_updated[arxiv_id].append({
+            "at_uri": row["at_uri"],
+            "AuthorDID": row["AuthorDID"],
+            "CreatedDate": row["CreatedDate"],
+            "CID": row["CID"],
+            "ReplyParent": row["ReplyParent"],
+            "ReplyRoot": row["ReplyRoot"],
+            "SearchText": search_text
+        })
 
-    print(f"Mapping saved to {output_filename}")
-    
-    # Step 3: Print example
-    for arxiv_id, posts in list(arxiv_dict.items())[:5]:
-        print(f"arXiv ID: {arxiv_id} - {len(posts)} posts")
-        for post in posts[:1]:  # Show 1 example post per ID
-            print(f"  Example Post: {post['at_uri']} by {post['AuthorDID']} on {post['CreatedDate']}")
+# Convert the mapping into a JSON structure
+arxiv_json_mapping = json.dumps(arxiv_mapping_updated, indent=4)
+
+# Print or return the JSON string
+print(arxiv_json_mapping)
+
 
