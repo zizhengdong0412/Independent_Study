@@ -1,0 +1,58 @@
+import csv
+import re
+import json
+from collections import defaultdict
+
+# Regular expression to match arXiv IDs (like "arXiv:2104.12345")
+arxiv_regex = re.compile(r'arxiv[:\s]*([0-9]{4}\.[0-9]{4,5}(?:v\d+)?)', re.IGNORECASE)
+
+def create_arxiv_mapping(csv_filename):
+    """
+    Reads the CSV file and creates a dictionary mapping arXiv IDs to posts mentioning them.
+    """
+    arxiv_mapping = defaultdict(list)
+
+    with open(csv_filename, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        
+        for row in reader:
+            # Extract the SearchText field
+            search_text = row.get("SearchText", "")
+            
+            # Find all arXiv IDs in the text
+            arxiv_ids = arxiv_regex.findall(search_text)
+            
+            for arxiv_id in arxiv_ids:
+                # Store relevant post information
+                post_info = {
+                    "at_uri": row["at_uri"],
+                    "AuthorDID": row["AuthorDID"],
+                    "CID": row["CID"],
+                    "CreatedDate": row["CreatedDate"],
+                    "ReplyParent": row["ReplyParent"],
+                    "ReplyRoot": row["ReplyRoot"],
+                    "SearchText": search_text
+                }
+                arxiv_mapping[arxiv_id].append(post_info)
+
+    return arxiv_mapping
+
+if __name__ == "__main__":
+    csv_filename = "paper_posts_initial.csv"
+    
+    # Step 1: Create the arXiv to posts mapping
+    arxiv_dict = create_arxiv_mapping(csv_filename)
+    
+    # Step 2: Persist the mapping (Save as JSON file)
+    output_filename = "arxiv_posts_mapping.json"
+    with open(output_filename, "w", encoding="utf-8") as f:
+        json.dump(arxiv_dict, f, indent=4)
+
+    print(f"Mapping saved to {output_filename}")
+    
+    # Step 3: Print example
+    for arxiv_id, posts in list(arxiv_dict.items())[:5]:
+        print(f"arXiv ID: {arxiv_id} - {len(posts)} posts")
+        for post in posts[:1]:  # Show 1 example post per ID
+            print(f"  Example Post: {post['at_uri']} by {post['AuthorDID']} on {post['CreatedDate']}")
+
