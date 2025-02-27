@@ -13,7 +13,7 @@ arxiv_regex_updated = re.compile(
 )
 
 # Dictionary to map arXiv ID -> [Bluesky posts]
-arxiv_mapping_updated = defaultdict(list)
+arxiv_mapping_v2 = defaultdict(list)
 
 # Iterate over rows and extract arXiv IDs using the updated regex
 for _, row in df.iterrows():
@@ -22,7 +22,7 @@ for _, row in df.iterrows():
 
     for arxiv_id in arxiv_ids:
         # Store relevant post details
-        arxiv_mapping_updated[arxiv_id].append({
+        arxiv_mapping_v2[arxiv_id].append({
             "at_uri": row["at_uri"],
             "AuthorDID": row["AuthorDID"],
             "CreatedDate": row["CreatedDate"],
@@ -32,10 +32,14 @@ for _, row in df.iterrows():
             "SearchText": search_text
         })
 
-# Convert the mapping into a JSON structure
-arxiv_json_mapping = json.dumps(arxiv_mapping_updated, indent=4)
+arxiv_df_updated = pd.DataFrame(
+    [(arxiv_id, post["at_uri"], post["AuthorDID"], post["CreatedDate"], post["SearchText"])
+     for arxiv_id, posts in arxiv_mapping_v2.items() for post in posts],
+    columns=["arXiv_ID", "at_uri", "AuthorDID", "CreatedDate", "SearchText"]
+)
 
-# Print or return the JSON string
-print(arxiv_json_mapping)
+with open("arxiv_bluesky_mapping.json", "w", encoding="utf-8") as f:
+    json.dump(arxiv_mapping_v2, f, indent=4)
 
+print("JSON mapping saved as 'arxiv_bluesky_mapping.json'")
 
